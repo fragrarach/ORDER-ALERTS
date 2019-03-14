@@ -121,6 +121,7 @@ def production_query(sql_exp):
     return result_set
 
 
+# TODO : Split 'order_cli_name1' function into two functions ('cli_id_ord_no'/'cli_name1_cli_id')
 # Pull 'cli_name1' record from 'client' table based on 'ord_no' record
 def order_cli_name1(ord_no):
     sql_exp = f'SELECT cli_id FROM order_header WHERE ord_no = {ord_no}'
@@ -764,6 +765,7 @@ def alert_handler(alert, ref, user):
         email_handler(body, to_list, cc_list, subject_str)
 
 
+# TODO : Catch connection error during DB service downtime
 def main():
     while 1:
         conn_sigm.poll()
