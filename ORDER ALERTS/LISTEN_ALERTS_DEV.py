@@ -9,6 +9,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
+# Check whether app should reference dev or prod server/db
 def dev_check():
     raw_filename = os.path.basename(__file__)
     removed_extension = raw_filename.split('.')[0]
@@ -19,6 +20,7 @@ def dev_check():
         return False
 
 
+# PostgreSQL DB connection configs
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
@@ -33,20 +35,23 @@ sigm_listen = conn_sigm.cursor()
 sigm_listen.execute("LISTEN alert;")
 sigm_query = conn_sigm.cursor()
 
-conn_log = psycopg2.connect("host='192.168.0.57' dbname='LOG' user='SIGM' port='5493'")
+conn_log = psycopg2.connect("host='192.168.0.250' dbname='LOG' user='SIGM' port='5493'")
 conn_log.set_client_encoding("latin1")
 conn_log.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
 log_query = conn_log.cursor()
 
 
+# Log triggered alerts to LOG DB
 def log_handler(timestamp, alert, ref_type, ref, user, station):
     sql_exp = f'INSERT INTO alerts (time_stamp, alert, ref_type, reference, user_name, station) ' \
               f'VALUES (\'{timestamp}\', \'{alert}\', \'{ref_type}\', \'{ref}\', \'{user}\', \'{station}\')'
     log_query.execute(sql_exp)
 
 
+# Check if alert has been triggered recently
 def duplicate_alert_check(timestamp, alert, ref_type, ref, user, station):
+    # TODO : Refactor as SQL stored procedure
     sql_exp = f'SELECT CASE WHEN NOT EXISTS (' \
               f'        SELECT * ' \
               f'        FROM alerts ' \
@@ -74,6 +79,7 @@ def duplicate_alert_check(timestamp, alert, ref_type, ref, user, station):
                 print(f'Duplicate Error : {log_message}')
 
 
+# Split payload string, store as named variables, send to duplicate alert checker
 def payload_handler(payload):
     ref_type = payload.split(", ")[0]
     ref = payload.split(", ")[1]
@@ -86,6 +92,7 @@ def payload_handler(payload):
     duplicate_alert_check(timestamp, alert, ref_type, ref, user, station)
 
 
+# Convert tabular query result to list (2D array)
 def tabular_data(result_set):
     lines = []
     for row in result_set:
@@ -98,6 +105,7 @@ def tabular_data(result_set):
     return lines
 
 
+# Convert scalar query result to singleton variable of any data type
 def scalar_data(result_set):
     for row in result_set:
         for cell in row:
@@ -106,33 +114,15 @@ def scalar_data(result_set):
             return cell
 
 
-def part_kit_data(result_set, ord_no, sql_exp):
-    kits = []
-    for row in result_set:
-        parent = []
-        index = row[0]
-        prt_no = row[1].strip()
-        orl_kitmaster_id = row[2]
-
-        parent.append(index)
-        parent.append(prt_no)
-        sql_exp = sql_exp.format(orl_kitmaster_id, ord_no)
-        sigm_query.execute(sql_exp)
-        result_set = sigm_query.fetchall()
-
-        lines = tabular_data(result_set)
-
-        parent.append(lines)
-        kits.append(parent)
-    return kits
-
-
+# Query production database
 def production_query(sql_exp):
     sigm_query.execute(sql_exp)
     result_set = sigm_query.fetchall()
     return result_set
 
 
+# TODO : Split 'order_cli_name1' function into two functions ('cli_id_ord_no'/'cli_name1_cli_id')
+# Pull 'cli_name1' record from 'client' table based on 'ord_no' record
 def order_cli_name1(ord_no):
     sql_exp = f'SELECT cli_id FROM order_header WHERE ord_no = {ord_no}'
     result_set = production_query(sql_exp)
@@ -144,6 +134,7 @@ def order_cli_name1(ord_no):
     return cli_name1
 
 
+# Pull 'ord_no' record from 'invoicing' table based on 'inv_pckslp_no' record
 def packing_slip_ord_no(inv_pckslp_no):
     sql_exp = f'SELECT ord_no FROM invoicing WHERE inv_pckslp_no = {inv_pckslp_no}'
     result_set = production_query(sql_exp)
@@ -151,6 +142,7 @@ def packing_slip_ord_no(inv_pckslp_no):
     return ord_no
 
 
+# Pull 'ord_no' record from 'invoicing' table based on 'inv_no' record
 def invoice_ord_no(inv_no):
     sql_exp = f'SELECT ord_no FROM invoicing WHERE inv_no = {inv_no}'
     result_set = production_query(sql_exp)
@@ -158,6 +150,7 @@ def invoice_ord_no(inv_no):
     return ord_no
 
 
+# Pull 'prt_no' record from 'part_transaction' table based on 'ptn_id' record
 def transaction_prt_no(ptn_id):
     sql_exp = f'SELECT prt_no FROM part_transaction WHERE ptn_id = {ptn_id}'
     result_set = production_query(sql_exp)
@@ -165,6 +158,7 @@ def transaction_prt_no(ptn_id):
     return prt_no
 
 
+# Pull 'ptn_desc' record from 'part_transaction' table based on 'ptn_id' record
 def transaction_ptn_desc(ptn_id):
     sql_exp = f'SELECT ptn_desc FROM part_transaction WHERE ptn_id = {ptn_id}'
     result_set = production_query(sql_exp)
@@ -172,6 +166,7 @@ def transaction_ptn_desc(ptn_id):
     return ptn_desc
 
 
+# Pull 'prt_no' record from 'planning_lot_quantity' table based on 'plq_lot_no' record
 def planning_lot_prt_no(plq_lot_no):
     sql_exp = f'SELECT prt_no FROM planning_lot_quantity WHERE plq_lot_no = {plq_lot_no}'
     result_set = production_query(sql_exp)
@@ -179,6 +174,8 @@ def planning_lot_prt_no(plq_lot_no):
     return prt_no
 
 
+# Pass 'ord_no' to 'order_existing_blankets' stored procedure
+# Checks if any existing blanket orders include parts on 'ord_no' reference
 def order_existing_blankets(ord_no):
     sql_exp = f'SELECT * FROM order_existing_blankets({ord_no})'
     result_set = production_query(sql_exp)
@@ -186,25 +183,62 @@ def order_existing_blankets(ord_no):
     return blankets
 
 
+# Pass 'ord_no' to 'order_component_parents' stored procedure
+# Pass 'ord_no', 'orl_kitmaster_id' to 'order_missing_components' stored procedure
+# Checks if any parts on the order are "parents", check if any of their "children" are missing from the order
 def order_missing_component_prt_no(ord_no):
     sql_exp = f'SELECT * FROM order_component_parents({ord_no})'
     result_set = production_query(sql_exp)
 
-    sql_exp = 'SELECT * FROM order_missing_components({}, {})'
-    missing_components = part_kit_data(result_set, ord_no, sql_exp)
-    return missing_components
+    kits = []
+    for row in result_set:
+        parent = []
+        index = row[0]
+        prt_no = row[1].strip()
+        orl_kitmaster_id = row[2]
+
+        parent.append(index)
+        parent.append(prt_no)
+        sql_exp = f'SELECT * FROM order_missing_components({ord_no}, {orl_kitmaster_id})'
+        sigm_query.execute(sql_exp)
+        result_set = sigm_query.fetchall()
+
+        lines = tabular_data(result_set)
+
+        parent.append(lines)
+        kits.append(parent)
+    return kits
 
 
+# Pass 'ord_no' to 'order_component_parents' stored procedure
+# Pass 'ord_no', 'orl_kitmaster_id' to 'order_component_quantities' stored procedure
+# Checks if any parts on the order are "parents", check if any of their "children" have incorrect quantities
 def order_component_multiplier_prt_no(ord_no):
     sql_exp = f'SELECT * FROM order_component_parents({ord_no})'
     sigm_query.execute(sql_exp)
     result_set = sigm_query.fetchall()
 
-    sql_exp = 'SELECT * FROM order_component_quantities({}, {})'
-    component_quantities = part_kit_data(result_set, ord_no, sql_exp)
-    return component_quantities
+    kits = []
+    for row in result_set:
+        parent = []
+        index = row[0]
+        prt_no = row[1].strip()
+        orl_kitmaster_id = row[2]
+
+        parent.append(index)
+        parent.append(prt_no)
+        sql_exp = f'SELECT * FROM order_component_quantities({ord_no}, {orl_kitmaster_id})'
+        sigm_query.execute(sql_exp)
+        result_set = sigm_query.fetchall()
+
+        lines = tabular_data(result_set)
+
+        parent.append(lines)
+        kits.append(parent)
+    return kits
 
 
+# Email body formatting functions, called by the alert handler based on triggered alert
 def client_bo_allowed(ref):
     if dev_check():
         to_list = ['jan.z@quatroair.com']
@@ -430,8 +464,8 @@ def order_completed_blanket(ref, cli_name1):
         to_list = ['jan.z@quatroair.com']
         cc_list = ['jan.z@quatroair.com']
     else:
-        to_list = ['stephanie.l@quatroair.com']
-        cc_list = ['']
+        to_list = ['sales@quatroair.com']
+        cc_list = ['stephanie.l@quatroair.com']
 
     ord_no = ref
     subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
@@ -585,6 +619,23 @@ def order_component_multiplier(ref, cli_name1, component_multiplier):
     return body, to_list, cc_list, subject_str
 
 
+def planning_lot_calculation(ref):
+    if dev_check():
+        to_list = ['jan.z@quatroair.com']
+        cc_list = ['jan.z@quatroair.com']
+    else:
+        to_list = ['stephanie.l@quatroair.com']
+        cc_list = ['']
+
+    plq_lot_no = ref
+    subject_str = f"SIGM Uncheck Lot Calculation {plq_lot_no}"
+    body = f'Our system has detected a planning lot ({plq_lot_no}) has been calculated without using' \
+           f' manufactured inventory. \n\n'
+    body += 'Thank you'
+    return body, to_list, cc_list, subject_str
+
+
+# Send formatted email body to defined recipients
 def email_handler(body, to_list, cc_list, subject_str):
     from_str = 'noreply@quatroair.com'
     bcc_list = ['jan.z@quatroair.com']
@@ -602,11 +653,12 @@ def email_handler(body, to_list, cc_list, subject_str):
     s = smtplib.SMTP('aerofil-ca.mail.protection.outlook.com')
     s.starttls()
 
-    # s.sendmail(from_str, to_list + cc_list + bcc_list, text)
+    s.sendmail(from_str, to_list + cc_list + bcc_list, text)
     s.quit()
     print('Email Sent')
 
 
+# Calls appropriate email body formatting function based on triggered alert
 def alert_handler(alert, ref, user):
     if alert == 'BO ALLOWED':
         body, to_list, cc_list, subject_str = client_bo_allowed(ref)
@@ -708,6 +760,12 @@ def alert_handler(alert, ref, user):
         else:
             print(f'FALSE POSITIVE COMPONENT MULTIPLIER')
 
+    elif alert == 'UNCHECKED NEED CALCULATION':
+        body, to_list, cc_list, subject_str = planning_lot_calculation(ref)
+        email_handler(body, to_list, cc_list, subject_str)
+
+
+# TODO : Catch connection error during DB service downtime
 def main():
     while 1:
         conn_sigm.poll()
