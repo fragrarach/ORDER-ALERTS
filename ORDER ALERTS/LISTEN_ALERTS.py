@@ -20,18 +20,8 @@ def log_handler(timestamp, alert, ref_type, ref, user, station):
 
 # Check if alert has been triggered recently
 def duplicate_alert_check(timestamp, alert, ref_type, ref, user, station):
-    # TODO : Refactor as SQL stored procedure
-    sql_exp = f'SELECT CASE WHEN NOT EXISTS (' \
-              f'        SELECT * ' \
-              f'        FROM alerts ' \
-              f'        WHERE alert = \'{alert}\' ' \
-              f'        AND ref_type = \'{ref_type}\' ' \
-              f'        AND reference = \'{ref}\' ' \
-              f'        AND user_name = \'{user}\' ' \
-              f'        AND time_stamp + 1 * interval \'1 hour\' > \'{timestamp}\'::timestamp ' \
-              f'        AND time_stamp < \'{timestamp}\'::timestamp ' \
-              f'        AND station = \'{station}\' ' \
-              f') THEN 1 ELSE 0 END'
+    sql_exp = f'SELECT * FROM duplicate_alert_check(' \
+              f'\'{timestamp}\', \'{alert}\', \'{ref_type}\', \'{ref}\', \'{user}\', \'{station}\')'
     log_query.execute(sql_exp)
     result_set = log_query.fetchall()
     log_message = f'{alert} on {ref_type} {ref} by {user} on workstation {station} at {timestamp}\n'
@@ -41,8 +31,7 @@ def duplicate_alert_check(timestamp, alert, ref_type, ref, user, station):
             check = cell
             if check == 1:
                 print(f'Error Logged : {log_message}')
-                if not dev_check():
-                    log_handler(timestamp, alert, ref_type, ref, user, station)
+                log_handler(timestamp, alert, ref_type, ref, user, station)
                 alert_handler(alert, ref, user)
             else:
                 print(f'Duplicate Error : {log_message}')
@@ -90,13 +79,16 @@ def production_query(sql_exp):
     return result_set
 
 
-# TODO : Split 'order_cli_name1' function into two functions ('cli_id_ord_no'/'cli_name1_cli_id')
-# Pull 'cli_name1' record from 'client' table based on 'ord_no' record
-def order_cli_name1(ord_no):
+# Pull 'cli_id' record from 'order_header' table based on 'ord_no' record
+def ord_no_cli_id(ord_no):
     sql_exp = f'SELECT cli_id FROM order_header WHERE ord_no = {ord_no}'
     result_set = production_query(sql_exp)
     cli_id = scalar_data(result_set)
+    return cli_id
 
+
+# Pull 'cli_name1' record from 'client' table based on 'cli_id' record
+def cli_id_cli_name1(cli_id):
     sql_exp = f'SELECT cli_name1 FROM client WHERE cli_id = {cli_id}'
     result_set = production_query(sql_exp)
     cli_name1 = scalar_data(result_set)
@@ -634,17 +626,23 @@ def alert_handler(alert, ref, user):
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'BO NOT ALLOWED':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         body, to_list, cc_list, subject_str = order_bo_not_allowed(ref, cli_name1)
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'NOT RESERVED':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         body, to_list, cc_list, subject_str = order_not_reserved(ref, cli_name1, user)
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'ZERO QUANTITY':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         body, to_list, cc_list, subject_str = order_zero_quantity(ref, cli_name1)
         email_handler(body, to_list, cc_list, subject_str)
 
@@ -653,12 +651,16 @@ def alert_handler(alert, ref, user):
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'NEW BLANKET':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         body, to_list, cc_list, subject_str = order_new_blanket(ref, cli_name1, user)
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'NEW RELEASE':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         body, to_list, cc_list, subject_str = order_new_release(ref, cli_name1, user)
         email_handler(body, to_list, cc_list, subject_str)
 
@@ -673,12 +675,16 @@ def alert_handler(alert, ref, user):
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'LINE DATES':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         body, to_list, cc_list, subject_str = order_different_line_dates(ref, cli_name1)
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'ZERO BANK FEES':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         body, to_list, cc_list, subject_str = order_zero_bank_fees(ref, cli_name1)
         email_handler(body, to_list, cc_list, subject_str)
 
@@ -689,7 +695,9 @@ def alert_handler(alert, ref, user):
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'COMPLETED BLANKET':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         body, to_list, cc_list, subject_str = order_completed_blanket(ref, cli_name1)
         email_handler(body, to_list, cc_list, subject_str)
 
@@ -704,24 +712,32 @@ def alert_handler(alert, ref, user):
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'CONVERTED DATE':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         body, to_list, cc_list, subject_str = order_converted_date(ref, cli_name1)
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'EXISTING BLANKET':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         blankets = order_existing_blankets(ref)
         body, to_list, cc_list, subject_str = order_existing_blanket(ref, cli_name1, blankets)
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'MISSING COMPONENT':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         missing_components = order_missing_component_prt_no(ref)
         body, to_list, cc_list, subject_str = order_missing_component(ref, cli_name1, missing_components)
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'COMPONENT MULTIPLIER':
-        cli_name1 = order_cli_name1(ref)
+        ord_no = ref
+        cli_id = ord_no_cli_id(ord_no)
+        cli_name1 = cli_id_cli_name1(cli_id)
         component_multiplier = order_component_multiplier_prt_no(ref)
         if component_multiplier[0][2]:
             body, to_list, cc_list, subject_str = order_component_multiplier(ref, cli_name1, component_multiplier)
