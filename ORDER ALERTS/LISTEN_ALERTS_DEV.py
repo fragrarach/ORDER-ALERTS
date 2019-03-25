@@ -740,8 +740,7 @@ def main():
     conn_sigm, sigm_query = sigm_conn(channel)
     conn_log, log_query = log_conn()
 
-    # TODO : Move SQL files to SIGM/LOG sub folders
-    # add_sql_files()
+    add_sql_files()
 
     while 1:
         try:
