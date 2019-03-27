@@ -60,8 +60,7 @@ IF tg_table_name = 'invoicing' THEN
         END IF;
         
         IF
-            NEW.inv_inv_sendmail = 'T'
-            AND NEW.inv_inv_email_sent = 'F'
+            NEW.inv_inv_email_sent = 'F'
             AND NEW.inv_no <> 0
             AND NEW.inv_subtotal >= 0
         THEN 
