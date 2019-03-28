@@ -1,8 +1,7 @@
 import smtplib
-import psycopg2.extensions
 import re
 import datetime
-from sigm import dev_check, sigm_conn, log_conn, add_sql_files
+from sigm import *
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -15,15 +14,15 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 def log_handler(timestamp, alert, ref_type, ref, user, station):
     sql_exp = f'INSERT INTO alerts (time_stamp, alert, ref_type, reference, user_name, station) ' \
               f'VALUES (\'{timestamp}\', \'{alert}\', \'{ref_type}\', \'{ref}\', \'{user}\', \'{station}\')'
-    log_query.execute(sql_exp)
+    log_db_cursor.execute(sql_exp)
 
 
 # Check if alert has been triggered recently
 def duplicate_alert_check(timestamp, alert, ref_type, ref, user, station):
     sql_exp = f'SELECT * FROM duplicate_alert_check(' \
               f'\'{timestamp}\', \'{alert}\', \'{ref_type}\', \'{ref}\', \'{user}\', \'{station}\')'
-    log_query.execute(sql_exp)
-    result_set = log_query.fetchall()
+    log_db_cursor.execute(sql_exp)
+    result_set = log_db_cursor.fetchall()
     log_message = f'{alert} on {ref_type} {ref} by {user} on workstation {station} at {timestamp}\n'
 
     for row in result_set:
@@ -50,39 +49,10 @@ def payload_handler(payload):
     duplicate_alert_check(timestamp, alert, ref_type, ref, user, station)
 
 
-# Convert tabular query result to list (2D array)
-def tabular_data(result_set):
-    lines = []
-    for row in result_set:
-        line = []
-        for cell in row:
-            if type(cell) == str:
-                cell = cell.strip()
-            line.append(cell)
-        lines.append(line)
-    return lines
-
-
-# Convert scalar query result to singleton variable of any data type
-def scalar_data(result_set):
-    for row in result_set:
-        for cell in row:
-            if type(cell) == str:
-                cell = cell.strip()
-            return cell
-
-
-# Query production database
-def production_query(sql_exp):
-    sigm_query.execute(sql_exp)
-    result_set = sigm_query.fetchall()
-    return result_set
-
-
 # Pull 'cli_id' record from 'order_header' table based on 'ord_no' record
 def ord_no_cli_id(ord_no):
     sql_exp = f'SELECT cli_id FROM order_header WHERE ord_no = {ord_no}'
-    result_set = production_query(sql_exp)
+    result_set = sigm_db_query(sql_exp)
     cli_id = scalar_data(result_set)
     return cli_id
 
@@ -90,7 +60,7 @@ def ord_no_cli_id(ord_no):
 # Pull 'cli_name1' record from 'client' table based on 'cli_id' record
 def cli_id_cli_name1(cli_id):
     sql_exp = f'SELECT cli_name1 FROM client WHERE cli_id = {cli_id}'
-    result_set = production_query(sql_exp)
+    result_set = sigm_db_query(sql_exp)
     cli_name1 = scalar_data(result_set)
     return cli_name1
 
@@ -98,7 +68,7 @@ def cli_id_cli_name1(cli_id):
 # Pull 'ord_no' record from 'invoicing' table based on 'inv_pckslp_no' record
 def packing_slip_ord_no(inv_pckslp_no):
     sql_exp = f'SELECT ord_no FROM invoicing WHERE inv_pckslp_no = {inv_pckslp_no}'
-    result_set = production_query(sql_exp)
+    result_set = sigm_db_query(sql_exp)
     ord_no = scalar_data(result_set)
     return ord_no
 
@@ -106,7 +76,7 @@ def packing_slip_ord_no(inv_pckslp_no):
 # Pull 'ord_no' record from 'invoicing' table based on 'inv_no' record
 def invoice_ord_no(inv_no):
     sql_exp = f'SELECT ord_no FROM invoicing WHERE inv_no = {inv_no}'
-    result_set = production_query(sql_exp)
+    result_set = sigm_db_query(sql_exp)
     ord_no = scalar_data(result_set)
     return ord_no
 
@@ -114,7 +84,7 @@ def invoice_ord_no(inv_no):
 # Pull 'prt_no' record from 'part_transaction' table based on 'ptn_id' record
 def transaction_prt_no(ptn_id):
     sql_exp = f'SELECT prt_no FROM part_transaction WHERE ptn_id = {ptn_id}'
-    result_set = production_query(sql_exp)
+    result_set = sigm_db_query(sql_exp)
     prt_no = scalar_data(result_set)
     return prt_no
 
@@ -122,7 +92,7 @@ def transaction_prt_no(ptn_id):
 # Pull 'ptn_desc' record from 'part_transaction' table based on 'ptn_id' record
 def transaction_ptn_desc(ptn_id):
     sql_exp = f'SELECT ptn_desc FROM part_transaction WHERE ptn_id = {ptn_id}'
-    result_set = production_query(sql_exp)
+    result_set = sigm_db_query(sql_exp)
     ptn_desc = scalar_data(result_set)
     return ptn_desc
 
@@ -130,7 +100,7 @@ def transaction_ptn_desc(ptn_id):
 # Pull 'prt_no' record from 'planning_lot_quantity' table based on 'plq_lot_no' record
 def planning_lot_prt_no(plq_lot_no):
     sql_exp = f'SELECT prt_no FROM planning_lot_quantity WHERE plq_lot_no = {plq_lot_no}'
-    result_set = production_query(sql_exp)
+    result_set = sigm_db_query(sql_exp)
     prt_no = scalar_data(result_set)
     return prt_no
 
@@ -139,7 +109,7 @@ def planning_lot_prt_no(plq_lot_no):
 # Checks if any existing blanket orders include parts on 'ord_no' reference
 def order_existing_blankets(ord_no):
     sql_exp = f'SELECT * FROM order_existing_blankets({ord_no})'
-    result_set = production_query(sql_exp)
+    result_set = sigm_db_query(sql_exp)
     blankets = tabular_data(result_set)
     return blankets
 
@@ -149,7 +119,7 @@ def order_existing_blankets(ord_no):
 # Checks if any parts on the order are "parents", check if any of their "children" are missing from the order
 def order_missing_component_prt_no(ord_no):
     sql_exp = f'SELECT * FROM order_component_parents({ord_no})'
-    result_set = production_query(sql_exp)
+    result_set = sigm_db_query(sql_exp)
 
     kits = []
     for row in result_set:
@@ -161,8 +131,8 @@ def order_missing_component_prt_no(ord_no):
         parent.append(index)
         parent.append(prt_no)
         sql_exp = f'SELECT * FROM order_missing_components({ord_no}, {orl_kitmaster_id})'
-        sigm_query.execute(sql_exp)
-        result_set = sigm_query.fetchall()
+        sigm_db_cursor.execute(sql_exp)
+        result_set = sigm_db_cursor.fetchall()
 
         lines = tabular_data(result_set)
 
@@ -176,8 +146,8 @@ def order_missing_component_prt_no(ord_no):
 # Checks if any parts on the order are "parents", check if any of their "children" have incorrect quantities
 def order_component_multiplier_prt_no(ord_no):
     sql_exp = f'SELECT * FROM order_component_parents({ord_no})'
-    sigm_query.execute(sql_exp)
-    result_set = sigm_query.fetchall()
+    sigm_db_cursor.execute(sql_exp)
+    result_set = sigm_db_cursor.fetchall()
 
     kits = []
     for row in result_set:
@@ -189,8 +159,8 @@ def order_component_multiplier_prt_no(ord_no):
         parent.append(index)
         parent.append(prt_no)
         sql_exp = f'SELECT * FROM order_component_quantities({ord_no}, {orl_kitmaster_id})'
-        sigm_query.execute(sql_exp)
-        result_set = sigm_query.fetchall()
+        sigm_db_cursor.execute(sql_exp)
+        result_set = sigm_db_cursor.fetchall()
 
         lines = tabular_data(result_set)
 
@@ -752,28 +722,28 @@ def alert_handler(alert, ref, user):
 
 def main():
     channel = 'alert'
-    global conn_sigm, sigm_query, conn_log, log_query
-    conn_sigm, sigm_query = sigm_conn(channel)
-    conn_log, log_query = log_conn()
+    global sigm_connection, sigm_db_cursor, log_connection, log_db_cursor
+    sigm_connection, sigm_db_cursor = sigm_connect(channel)
+    log_connection, log_db_cursor = log_connect()
 
     add_sql_files()
 
     while 1:
         try:
-            conn_sigm.poll()
+            sigm_connection.poll()
         except:
             print('Database cannot be accessed, PostgreSQL service probably rebooting')
             try:
-                conn_sigm.close()
-                conn_sigm, sigm_query = sigm_conn()
-                conn_log.close()
-                conn_log, log_query = log_conn()
+                sigm_connection.close()
+                sigm_connection, sigm_db_cursor = sigm_connect(channel)
+                log_connection.close()
+                log_connection, log_db_cursor = log_connect()
             except:
                 pass
         else:
-            conn_sigm.commit()
-            while conn_sigm.notifies:
-                notify = conn_sigm.notifies.pop()
+            sigm_connection.commit()
+            while sigm_connection.notifies:
+                notify = sigm_connection.notifies.pop()
                 raw_payload = notify.payload
                 print(f'Alert Triggered : {raw_payload}')
                 payload_handler(raw_payload)

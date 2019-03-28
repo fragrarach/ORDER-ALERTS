@@ -472,6 +472,7 @@ ELSIF tg_table_name = 'part_transaction' THEN
                         AND ord_no <> 0
                     )
                 )
+                AND inv_no <> 0
             )
         THEN
             PERFORM pg_notify(
