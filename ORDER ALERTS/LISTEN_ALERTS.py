@@ -52,7 +52,7 @@ def payload_handler(payload):
 # Pull 'cli_id' record from 'order_header' table based on 'ord_no' record
 def ord_no_cli_id(ord_no):
     sql_exp = f'SELECT cli_id FROM order_header WHERE ord_no = {ord_no}'
-    result_set = sigm_db_query(sql_exp)
+    result_set = sql_query(sql_exp, sigm_db_cursor)
     cli_id = scalar_data(result_set)
     return cli_id
 
@@ -60,7 +60,7 @@ def ord_no_cli_id(ord_no):
 # Pull 'cli_name1' record from 'client' table based on 'cli_id' record
 def cli_id_cli_name1(cli_id):
     sql_exp = f'SELECT cli_name1 FROM client WHERE cli_id = {cli_id}'
-    result_set = sigm_db_query(sql_exp)
+    result_set = sql_query(sql_exp, sigm_db_cursor)
     cli_name1 = scalar_data(result_set)
     return cli_name1
 
@@ -68,7 +68,7 @@ def cli_id_cli_name1(cli_id):
 # Pull 'ord_no' record from 'invoicing' table based on 'inv_pckslp_no' record
 def packing_slip_ord_no(inv_pckslp_no):
     sql_exp = f'SELECT ord_no FROM invoicing WHERE inv_pckslp_no = {inv_pckslp_no}'
-    result_set = sigm_db_query(sql_exp)
+    result_set = sql_query(sql_exp, sigm_db_cursor)
     ord_no = scalar_data(result_set)
     return ord_no
 
@@ -76,7 +76,7 @@ def packing_slip_ord_no(inv_pckslp_no):
 # Pull 'ord_no' record from 'invoicing' table based on 'inv_no' record
 def invoice_ord_no(inv_no):
     sql_exp = f'SELECT ord_no FROM invoicing WHERE inv_no = {inv_no}'
-    result_set = sigm_db_query(sql_exp)
+    result_set = sql_query(sql_exp, sigm_db_cursor)
     ord_no = scalar_data(result_set)
     return ord_no
 
@@ -84,7 +84,7 @@ def invoice_ord_no(inv_no):
 # Pull 'prt_no' record from 'part_transaction' table based on 'ptn_id' record
 def transaction_prt_no(ptn_id):
     sql_exp = f'SELECT prt_no FROM part_transaction WHERE ptn_id = {ptn_id}'
-    result_set = sigm_db_query(sql_exp)
+    result_set = sql_query(sql_exp, sigm_db_cursor)
     prt_no = scalar_data(result_set)
     return prt_no
 
@@ -92,7 +92,7 @@ def transaction_prt_no(ptn_id):
 # Pull 'ptn_desc' record from 'part_transaction' table based on 'ptn_id' record
 def transaction_ptn_desc(ptn_id):
     sql_exp = f'SELECT ptn_desc FROM part_transaction WHERE ptn_id = {ptn_id}'
-    result_set = sigm_db_query(sql_exp)
+    result_set = sql_query(sql_exp, sigm_db_cursor)
     ptn_desc = scalar_data(result_set)
     return ptn_desc
 
@@ -100,7 +100,7 @@ def transaction_ptn_desc(ptn_id):
 # Pull 'prt_no' record from 'planning_lot_quantity' table based on 'plq_lot_no' record
 def planning_lot_prt_no(plq_lot_no):
     sql_exp = f'SELECT prt_no FROM planning_lot_quantity WHERE plq_lot_no = {plq_lot_no}'
-    result_set = sigm_db_query(sql_exp)
+    result_set = sql_query(sql_exp, sigm_db_cursor)
     prt_no = scalar_data(result_set)
     return prt_no
 
@@ -109,7 +109,7 @@ def planning_lot_prt_no(plq_lot_no):
 # Checks if any existing blanket orders include parts on 'ord_no' reference
 def order_existing_blankets(ord_no):
     sql_exp = f'SELECT * FROM order_existing_blankets({ord_no})'
-    result_set = sigm_db_query(sql_exp)
+    result_set = sql_query(sql_exp, sigm_db_cursor)
     blankets = tabular_data(result_set)
     return blankets
 
@@ -119,7 +119,7 @@ def order_existing_blankets(ord_no):
 # Checks if any parts on the order are "parents", check if any of their "children" are missing from the order
 def order_missing_component_prt_no(ord_no):
     sql_exp = f'SELECT * FROM order_component_parents({ord_no})'
-    result_set = sigm_db_query(sql_exp)
+    result_set = sql_query(sql_exp, sigm_db_cursor)
 
     kits = []
     for row in result_set:
