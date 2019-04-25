@@ -305,78 +305,6 @@ ELSIF tg_table_name = 'order_header' THEN
                     || sigm_str || ''
                 );
             END IF;
-            
-            IF
-                NEW.ord_status NOT IN ('C', 'F', 'I')
-                AND EXISTS (
-                    WITH children AS (
-                        SELECT pkt_master_prt_id, prt_id 
-                        FROM part_kit
-                        WHERE pkt_master_prt_id IN (
-                            SELECT DISTINCT ol.prt_id
-                            FROM order_line ol
-                            LEFT JOIN part_kit pk ON pk.prt_id = ol.prt_id
-                            LEFT JOIN part_kit pk2 ON pk2.pkt_master_prt_id = ol.prt_id
-                            WHERE ord_no = NEW.ord_no
-                            AND orl_kitmaster_id = 0
-                        )
-                    )
-                    SELECT DISTINCT ord_no
-                    FROM order_line ol
-                    LEFT JOIN part_kit pk ON pk.prt_id = ol.prt_id
-                    LEFT JOIN part_kit pk2 ON pk2.pkt_master_prt_id = ol.prt_id
-                    WHERE ord_no = NEW.ord_no
-                    AND orl_kitmaster_id = 0
-                    AND EXISTS (
-                        SELECT prt_id
-                        FROM children
-                        WHERE pkt_master_prt_id = ol.prt_id
-                        AND prt_id NOT IN (
-                            SELECT prt_id
-                            FROM order_line
-                            WHERE orl_kitmaster_id = ol.orl_id
-                        )
-                    )
-                )
-            THEN
-                PERFORM pg_notify(
-                    'alert', '' 
-                    || 'ord_no' || ', '
-                    || NEW.ord_no::text || ', '
-                    || 'MISSING COMPONENT' || ', '
-                    || sigm_str || ''
-                );
-            END IF;
-            
-            IF
-                NEW.ord_status NOT IN ('C', 'F', 'I')
-                AND EXISTS (
-                    SELECT DISTINCT ord_no
-                    FROM order_line ol
-                    LEFT JOIN part_kit pk ON pk.prt_id = ol.prt_id
-                    LEFT JOIN part_kit pk2 ON pk2.pkt_master_prt_id = ol.prt_id
-                    WHERE ord_no = NEW.ord_no
-                    AND pk.pkt_qty * (
-                        SELECT orl_quantity 
-                        FROM order_line ol2 
-                        WHERE ord_no = NEW.ord_no 
-                        AND ol2.orl_id = ol.orl_kitmaster_id
-                    ) <> ol.orl_quantity
-                    AND pk.pkt_master_prt_id IN (
-                        SELECT prt_id 
-                        FROM order_line 
-                        WHERE ord_no = NEW.ord_no 
-                    )
-                )
-            THEN
-                PERFORM pg_notify(
-                    'alert', '' 
-                    || 'ord_no' || ', '
-                    || NEW.ord_no::text || ', '
-                    || 'COMPONENT MULTIPLIER' || ', '
-                    || sigm_str || ''
-                );
-            END IF;
         END IF;
         
         IF
@@ -415,6 +343,78 @@ ELSIF tg_table_name = 'order_header' THEN
                 || 'ord_no' || ', '
                 || NEW.ord_no::text || ', '
                 || 'CONVERTED DATE' || ', '
+                || sigm_str || ''
+            );
+        END IF;
+
+        IF
+            NEW.ord_status NOT IN ('C', 'F', 'I')
+            AND EXISTS (
+                WITH children AS (
+                    SELECT pkt_master_prt_id, prt_id
+                    FROM part_kit
+                    WHERE pkt_master_prt_id IN (
+                        SELECT DISTINCT ol.prt_id
+                        FROM order_line ol
+                        LEFT JOIN part_kit pk ON pk.prt_id = ol.prt_id
+                        LEFT JOIN part_kit pk2 ON pk2.pkt_master_prt_id = ol.prt_id
+                        WHERE ord_no = NEW.ord_no
+                        AND orl_kitmaster_id = 0
+                    )
+                )
+                SELECT DISTINCT ord_no
+                FROM order_line ol
+                LEFT JOIN part_kit pk ON pk.prt_id = ol.prt_id
+                LEFT JOIN part_kit pk2 ON pk2.pkt_master_prt_id = ol.prt_id
+                WHERE ord_no = NEW.ord_no
+                AND orl_kitmaster_id = 0
+                AND EXISTS (
+                    SELECT prt_id
+                    FROM children
+                    WHERE pkt_master_prt_id = ol.prt_id
+                    AND prt_id NOT IN (
+                        SELECT prt_id
+                        FROM order_line
+                        WHERE orl_kitmaster_id = ol.orl_id
+                    )
+                )
+            )
+        THEN
+            PERFORM pg_notify(
+                'alert', ''
+                || 'ord_no' || ', '
+                || NEW.ord_no::text || ', '
+                || 'MISSING COMPONENT' || ', '
+                || sigm_str || ''
+            );
+        END IF;
+
+        IF
+            NEW.ord_status NOT IN ('C', 'F', 'I')
+            AND EXISTS (
+                SELECT DISTINCT ord_no
+                FROM order_line ol
+                LEFT JOIN part_kit pk ON pk.prt_id = ol.prt_id
+                LEFT JOIN part_kit pk2 ON pk2.pkt_master_prt_id = ol.prt_id
+                WHERE ord_no = NEW.ord_no
+                AND pk.pkt_qty * (
+                    SELECT orl_quantity
+                    FROM order_line ol2
+                    WHERE ord_no = NEW.ord_no
+                    AND ol2.orl_id = ol.orl_kitmaster_id
+                ) <> ol.orl_quantity
+                AND pk.pkt_master_prt_id IN (
+                    SELECT prt_id
+                    FROM order_line
+                    WHERE ord_no = NEW.ord_no
+                )
+            )
+        THEN
+            PERFORM pg_notify(
+                'alert', ''
+                || 'ord_no' || ', '
+                || NEW.ord_no::text || ', '
+                || 'COMPONENT MULTIPLIER' || ', '
                 || sigm_str || ''
             );
         END IF;

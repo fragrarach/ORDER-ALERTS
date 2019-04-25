@@ -23,7 +23,11 @@ RETURN QUERY
         WHERE ord_no = $1
         AND ol2.orl_id = $2
     ) <> ol.orl_quantity
-AND pk.pkt_master_prt_id = (SELECT prt_id FROM order_line WHERE order_line.orl_id = ol.orl_kitmaster_id)
+    AND pk.pkt_master_prt_id = (
+        SELECT prt_id
+        FROM order_line
+        WHERE order_line.orl_id = ol.orl_kitmaster_id
+    )
     AND ol.orl_kitmaster_id = $2
     ORDER BY orl_sort_idx
 ;
