@@ -11,9 +11,9 @@ def listen():
             print('Database cannot be accessed, PostgreSQL service probably rebooting')
             try:
                 Config.SIGM_CONNECTION.close()
-                Config.SIGM_CONNECTION, sigm_db_cursor = sigm_connect(Config.LISTEN_CHANNEL)
+                Config.SIGM_CONNECTION, Config.SIGM_DB_CURSOR = sigm_connect(Config.LISTEN_CHANNEL)
                 Config.LOG_CONNECTION.close()
-                Config.LOG_CONNECTION, Config.log_db_cursor = log_connect()
+                Config.LOG_CONNECTION, Config.LOG_DB_CURSOR = log_connect()
             except:
                 pass
         else:
