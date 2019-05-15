@@ -1,7 +1,7 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from sigm import dev_check
+from quatro import dev_check
 
 
 # Email body formatting functions, called by the alert handler based on triggered alert

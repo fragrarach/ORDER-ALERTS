@@ -1,10 +1,12 @@
-from sigm import add_sql_files
-from listen import listen
+import quatro
+import config
+import tasks
 
 
 def main():
-    add_sql_files()
-    listen()
+    alert_config = config.Config()
+    quatro.add_sql_files(alert_config)
+    quatro.listen(alert_config, tasks.listen_task)
 
 
 if __name__ == "__main__":

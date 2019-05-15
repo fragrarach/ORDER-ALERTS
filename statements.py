@@ -1,69 +1,68 @@
-from sigm import sql_query, scalar_data, tabular_data
-from config import Config
+from quatro import sql_query, scalar_data, tabular_data
 import data
 
 
 # Pull 'cli_id' record from 'order_header' table based on 'ord_no' record
-def ord_no_cli_id(ord_no):
+def ord_no_cli_id(config, ord_no):
     sql_exp = f'SELECT cli_id FROM order_header WHERE ord_no = {ord_no}'
-    result_set = sql_query(sql_exp, Config.SIGM_DB_CURSOR)
+    result_set = sql_query(sql_exp, config.sigm_db_cursor)
     cli_id = scalar_data(result_set)
     return cli_id
 
 
 # Pull 'cli_name1' record from 'client' table based on 'cli_id' record
-def cli_id_cli_name1(cli_id):
+def cli_id_cli_name1(config, cli_id):
     sql_exp = f'SELECT cli_name1 FROM client WHERE cli_id = {cli_id}'
-    result_set = sql_query(sql_exp, Config.SIGM_DB_CURSOR)
+    result_set = sql_query(sql_exp, config.sigm_db_cursor)
     cli_name1 = scalar_data(result_set)
     return cli_name1
 
 
 # Pull 'ord_no' record from 'invoicing' table based on 'inv_pckslp_no' record
-def packing_slip_ord_no(inv_pckslp_no):
+def packing_slip_ord_no(config, inv_pckslp_no):
     sql_exp = f'SELECT ord_no FROM invoicing WHERE inv_pckslp_no = {inv_pckslp_no}'
-    result_set = sql_query(sql_exp, Config.SIGM_DB_CURSOR)
+    result_set = sql_query(sql_exp, config.sigm_db_cursor)
     ord_no = scalar_data(result_set)
     return ord_no
 
 
 # Pull 'ord_no' record from 'invoicing' table based on 'inv_no' record
-def invoice_ord_no(inv_no):
+def invoice_ord_no(config, inv_no):
     sql_exp = f'SELECT ord_no FROM invoicing WHERE inv_no = {inv_no}'
-    result_set = sql_query(sql_exp, Config.SIGM_DB_CURSOR)
+    result_set = sql_query(sql_exp, config.sigm_db_cursor)
     ord_no = scalar_data(result_set)
     return ord_no
 
 
 # Pull 'prt_no' record from 'part_transaction' table based on 'ptn_id' record
-def transaction_prt_no(ptn_id):
+def transaction_prt_no(config, ptn_id):
     sql_exp = f'SELECT prt_no FROM part_transaction WHERE ptn_id = {ptn_id}'
-    result_set = sql_query(sql_exp, Config.SIGM_DB_CURSOR)
+    result_set = sql_query(sql_exp, config.sigm_db_cursor)
     prt_no = scalar_data(result_set)
     return prt_no
 
 
 # Pull 'ptn_desc' record from 'part_transaction' table based on 'ptn_id' record
-def transaction_ptn_desc(ptn_id):
+def transaction_ptn_desc(config, ptn_id):
     sql_exp = f'SELECT ptn_desc FROM part_transaction WHERE ptn_id = {ptn_id}'
-    result_set = sql_query(sql_exp, Config.SIGM_DB_CURSOR)
+    result_set = sql_query(sql_exp, config.sigm_db_cursor)
     ptn_desc = scalar_data(result_set)
     return ptn_desc
 
 
 # Pull 'prt_no' record from 'planning_lot_quantity' table based on 'plq_lot_no' record
-def planning_lot_prt_no(plq_lot_no):
+def planning_lot_prt_no(config, plq_lot_no):
     sql_exp = f'SELECT prt_no FROM planning_lot_quantity WHERE plq_lot_no = {plq_lot_no}'
-    result_set = sql_query(sql_exp, Config.SIGM_DB_CURSOR)
+    result_set = sql_query(sql_exp, config.sigm_db_cursor)
     prt_no = scalar_data(result_set)
     return prt_no
 
 
 # Pass 'ord_no' to 'order_existing_blankets' stored procedure
 # Checks if any existing blanket orders include parts on 'ord_no' reference
-def order_existing_blankets(ord_no):
+def order_existing_blankets(config, ord_no):
     sql_exp = f'SELECT * FROM order_existing_blankets({ord_no})'
-    result_set = sql_query(sql_exp, Config.SIGM_DB_CURSOR)
+    result_set = sql_query(sql_exp, config.sigm_db_cursor)
     blankets = tabular_data(result_set)
     return blankets
 
@@ -71,9 +70,9 @@ def order_existing_blankets(ord_no):
 # Pass 'ord_no' to 'order_component_parents' stored procedure
 # Pass 'ord_no', 'orl_kitmaster_id' to 'order_missing_components' stored procedure
 # Checks if any parts on the order are "parents", check if any of their "children" are missing from the order
-def order_missing_component_prt_no(ord_no):
+def order_missing_component_prt_no(config, ord_no):
     sql_exp = f'SELECT * FROM order_component_parents({ord_no})'
-    result_set = sql_query(sql_exp, Config.SIGM_DB_CURSOR)
+    result_set = sql_query(sql_exp, config.sigm_db_cursor)
 
     kits = []
     for row in result_set:
@@ -85,8 +84,8 @@ def order_missing_component_prt_no(ord_no):
         parent.append(index)
         parent.append(prt_no)
         sql_exp = f'SELECT * FROM order_missing_components({ord_no}, {orl_kitmaster_id})'
-        Config.SIGM_DB_CURSOR.execute(sql_exp)
-        result_set = Config.SIGM_DB_CURSOR.fetchall()
+        config.sigm_db_cursor.execute(sql_exp)
+        result_set = config.sigm_db_cursor.fetchall()
 
         lines = tabular_data(result_set)
 
@@ -98,10 +97,10 @@ def order_missing_component_prt_no(ord_no):
 # Pass 'ord_no' to 'order_component_parents' stored procedure
 # Pass 'ord_no', 'orl_kitmaster_id' to 'order_component_quantities' stored procedure
 # Checks if any parts on the order are "parents", check if any of their "children" have incorrect quantities
-def order_component_multiplier_prt_no(ord_no):
+def order_component_multiplier_prt_no(config, ord_no):
     sql_exp = f'SELECT * FROM order_component_parents({ord_no})'
-    Config.SIGM_DB_CURSOR.execute(sql_exp)
-    result_set = Config.SIGM_DB_CURSOR.fetchall()
+    config.sigm_db_cursor.execute(sql_exp)
+    result_set = config.sigm_db_cursor.fetchall()
 
     kits = []
     for row in result_set:
@@ -113,8 +112,8 @@ def order_component_multiplier_prt_no(ord_no):
         parent.append(index)
         parent.append(prt_no)
         sql_exp = f'SELECT * FROM order_component_quantities({ord_no}, {orl_kitmaster_id})'
-        Config.SIGM_DB_CURSOR.execute(sql_exp)
-        result_set = Config.SIGM_DB_CURSOR.fetchall()
+        config.sigm_db_cursor.execute(sql_exp)
+        result_set = config.sigm_db_cursor.fetchall()
 
         lines = tabular_data(result_set)
 
@@ -124,18 +123,18 @@ def order_component_multiplier_prt_no(ord_no):
 
 
 # Log triggered alerts to LOG DB
-def log_handler(timestamp, alert, ref_type, ref, user, station):
+def log_handler(config, timestamp, alert, ref_type, ref, user, station):
     sql_exp = f'INSERT INTO alerts (time_stamp, alert, ref_type, reference, user_name, station) ' \
               f'VALUES (\'{timestamp}\', \'{alert}\', \'{ref_type}\', \'{ref}\', \'{user}\', \'{station}\')'
-    Config.LOG_DB_CURSOR.execute(sql_exp)
+    config.log_db_cursor.execute(sql_exp)
 
 
 # Check if alert has been triggered recently
-def duplicate_alert_check(timestamp, alert, ref_type, ref, user, station):
+def duplicate_alert_check(config, timestamp, alert, ref_type, ref, user, station):
     sql_exp = f'SELECT * FROM duplicate_alert_check(' \
               f'\'{timestamp}\', \'{alert}\', \'{ref_type}\', \'{ref}\', \'{user}\', \'{station}\')'
-    Config.LOG_DB_CURSOR.execute(sql_exp)
-    result_set = Config.LOG_DB_CURSOR.fetchall()
+    config.log_db_cursor.execute(sql_exp)
+    result_set = config.log_db_cursor.fetchall()
     log_message = f'{alert} on {ref_type} {ref} by {user} on workstation {station} at {timestamp}\n'
 
     for row in result_set:
@@ -143,7 +142,7 @@ def duplicate_alert_check(timestamp, alert, ref_type, ref, user, station):
             check = cell
             if check == 1:
                 print(f'Error Logged : {log_message}')
-                log_handler(timestamp, alert, ref_type, ref, user, station)
-                data.alert_handler(alert, ref, user)
+                log_handler(config, timestamp, alert, ref_type, ref, user, station)
+                data.alert_handler(config, alert, ref, user)
             else:
                 print(f'Duplicate Error : {log_message}')

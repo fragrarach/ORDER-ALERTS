@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../quatro" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../quatro_folders" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../quatro_labels" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../quatro_logging" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../quatro_orders" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../quatro_sales_reports" vcs="Git" />
+  </component>
+</project>
