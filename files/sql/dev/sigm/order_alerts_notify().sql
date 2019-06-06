@@ -305,6 +305,34 @@ ELSIF tg_table_name = 'order_header' THEN
                     || sigm_str || ''
                 );
             END IF;
+
+            IF
+                EXISTS (
+                    SELECT pg.pgr_no
+                    FROM order_header oh
+                    JOIN order_line ol USING(ord_id)
+                    JOIN part p USING(prt_id)
+                    JOIN part_group pg USING(pgr_id)
+                    WHERE oh.ord_no = NEW.ord_no
+                    AND ol.orl_req_dt < (oh.ord_date + '14 days'::INTERVAL)::DATE
+                    AND pg.pgr_no NOT IN (
+                            '002', '003', '004', '005', '006', '007', '008', '009',
+                            '010', '011', '012', '013', '014', '015', '016', '017', '018', '019',
+                            '020', '021', '050', '085', '086', '087',
+                            '088', '090', '093', '094', '095', '096', '097', '099', '100', '107', '120',
+                            '200', '203', '224', '226', '228', '230', '232', '237', '240', '244',
+                            '385', '387', '393', '395', '396', '398', '990'
+                    )
+                )
+            THEN
+                PERFORM pg_notify(
+                    'alert', ''
+                    || 'ord_no' || ', '
+                    || NEW.ord_no::text || ', '
+                    || 'UNIT DATES' || ', '
+                    || sigm_str || ''
+                );
+            END IF;
         END IF;
         
         IF
@@ -448,6 +476,7 @@ ELSIF tg_table_name = 'part_transaction' THEN
         IF
             NEW.prt_type = 'A'
             AND NEW.ptn_qty_after < 0
+            AND NEW.pgr_no NOT IN ('002', '226', '230')
         THEN
             PERFORM pg_notify(
                 'alert', '' 

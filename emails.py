@@ -213,7 +213,7 @@ def transaction_negative_quantity(ref, prt_no, ptn_desc):
         to_list = ['jan.z@quatroair.com']
         cc_list = ['jan.z@quatroair.com']
     else:
-        to_list = ['stephanie.l@quatroair.com']
+        to_list = ['sanjay.m@quatroair.com']
         cc_list = ['']
 
     ptn_id = ref
@@ -231,7 +231,7 @@ def order_completed_blanket(ref, cli_name1):
         cc_list = ['jan.z@quatroair.com']
     else:
         to_list = ['sales@quatroair.com']
-        cc_list = ['stephanie.l@quatroair.com']
+        cc_list = ['sanjay.m@quatroair.com']
 
     ord_no = ref
     subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
@@ -263,7 +263,7 @@ def transaction_invoiced_production(ref, prt_no):
         to_list = ['jan.z@quatroair.com']
         cc_list = ['jan.z@quatroair.com']
     else:
-        to_list = ['stephanie.l@quatroair.com']
+        to_list = ['sanjay.m@quatroair.com']
         cc_list = ['']
 
     plq_lot_no = ref
@@ -322,7 +322,7 @@ def order_missing_component(ref, cli_name1, missing_components):
         cc_list = ['jan.z@quatroair.com']
     else:
         to_list = ['sales@quatroair.com']
-        cc_list = ['stephanie.l@quatroair.com']
+        cc_list = ['sanjay.m@quatroair.com']
 
     ord_no = ref
     subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
@@ -351,7 +351,7 @@ def order_component_multiplier(ref, cli_name1, component_multiplier):
         cc_list = ['jan.z@quatroair.com']
     else:
         to_list = ['sales@quatroair.com']
-        cc_list = ['stephanie.l@quatroair.com']
+        cc_list = ['sanjay.m@quatroair.com']
 
     ord_no = ref
     subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
@@ -390,7 +390,7 @@ def planning_lot_calculation(ref):
         to_list = ['jan.z@quatroair.com']
         cc_list = ['jan.z@quatroair.com']
     else:
-        to_list = ['stephanie.l@quatroair.com']
+        to_list = ['sanjay.m@quatroair.com']
         cc_list = ['']
 
     plq_lot_no = ref
@@ -398,6 +398,27 @@ def planning_lot_calculation(ref):
     body = f'Our system has detected a planning lot ({plq_lot_no}) has been calculated without using' \
            f' manufactured inventory. \n\n'
     body += 'Thank you'
+    return body, to_list, cc_list, subject_str
+
+
+def order_unit_date(ref, cli_name1):
+    if dev_check():
+        to_list = ['jan.z@quatroair.com']
+        cc_list = ['jan.z@quatroair.com']
+    else:
+        to_list = ['sales@quatroair.com']
+        cc_list = ['']
+
+    ord_no = ref
+    subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
+    body = f"Our system has detected an incorrect order line date (Order Number {ord_no}) for {cli_name1}. \n\n" \
+           f"This is due to the order line required date being less than 14 days from the order date for a unit. " \
+           f"This is possible for expedited orders, otherwise order line required dates should be at least 14 days " \
+           f"from the order date. \n"
+    body += '\n' \
+            'If this was done intentionally, please ignore this message.\n\n' \
+            'Thank you.'
+
     return body, to_list, cc_list, subject_str
 
 

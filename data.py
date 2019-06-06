@@ -146,3 +146,10 @@ def alert_handler(config, alert, ref, user):
     elif alert == 'UNCHECKED NEED CALCULATION':
         body, to_list, cc_list, subject_str = planning_lot_calculation(ref)
         email_handler(body, to_list, cc_list, subject_str)
+
+    elif alert == 'UNIT DATES':
+        ord_no = ref
+        cli_id = statements.ord_no_cli_id(config, ord_no)
+        cli_name1 = statements.cli_id_cli_name1(config, cli_id)
+        body, to_list, cc_list, subject_str = order_unit_date(ord_no, cli_name1)
+        email_handler(body, to_list, cc_list, subject_str)

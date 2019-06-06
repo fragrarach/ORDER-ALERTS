@@ -3,10 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/quatro_alerts.iml" filepath="$PROJECT_DIR$/.idea/quatro_alerts.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../quatro_labels/.idea/quatro_labels.iml" filepath="$PROJECT_DIR$/../quatro_labels/.idea/quatro_labels.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../quatro_logging/.idea/quatro_logging.iml" filepath="$PROJECT_DIR$/../quatro_logging/.idea/quatro_logging.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../quatro_orders/.idea/quatro_orders.iml" filepath="$PROJECT_DIR$/../quatro_orders/.idea/quatro_orders.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../quatro_sales_reports/.idea/quatro_sales_reports.iml" filepath="$PROJECT_DIR$/../quatro_sales_reports/.idea/quatro_sales_reports.iml" />
     </modules>
   </component>
 </project>
