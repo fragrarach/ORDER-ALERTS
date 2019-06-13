@@ -76,18 +76,41 @@ IF tg_table_name = 'invoicing' THEN
     
 ELSIF tg_table_name = 'invoicing_line' THEN
 
-    IF 
+    IF
         tg_op = 'UPDATE'
-        AND OLD.inl_status <> 'A'
-        AND NEW.inl_status = 'A'
     THEN
-        PERFORM pg_notify(
-            'alert', '' 
-            || 'inv_pckslp_no' || ', '
-            || NEW.inv_pckslp_no::text || ', '
-            || 'CANCELLED PACKING SLIP' || ', '
-            || sigm_str || ''
-        );
+        IF
+            OLD.inl_status <> 'A'
+            AND NEW.inl_status = 'A'
+        THEN
+            PERFORM pg_notify(
+                'alert', ''
+                || 'inv_pckslp_no' || ', '
+                || NEW.inv_pckslp_no::text || ', '
+                || 'CANCELLED PACKING SLIP' || ', '
+                || sigm_str || ''
+            );
+        END IF;
+
+        IF
+            OLD.inl_status <> 'F'
+            AND NEW.inl_status = 'F'
+            AND EXISTS (
+                SELECT *
+                FROM planning_lot_quantity
+                WHERE orl_id = NEW.orl_id
+                AND plq_adj_flag = 'f'
+            )
+            AND NEW.orl_id <> 0
+        THEN
+            PERFORM pg_notify(
+                'alert', ''
+                || 'orl_id' || ', '
+                || NEW.orl_id::text || ', '
+                || 'INVOICED PRODUCTION' || ', '
+                || sigm_str || ''
+            );
+        END IF;
     END IF;
     
 ELSIF tg_table_name = 'order_header' THEN
@@ -483,32 +506,6 @@ ELSIF tg_table_name = 'part_transaction' THEN
                 || 'ptn_id' || ', '
                 || NEW.ptn_id::text || ', '
                 || 'NEGATIVE QUANTITY' || ', '
-                || sigm_str || ''
-            );
-        END IF;
-        
-        IF
-            EXISTS (
-                SELECT *
-                FROM invoicing_line 
-                WHERE inv_id IN (
-                    SELECT inv_id
-                    FROM invoicing
-                    WHERE ord_no IN (
-                        SELECT ord_no 
-                        FROM planning_lot_detailed 
-                        WHERE plq_lot_no = NEW.plq_lot_no
-                        AND ord_no <> 0
-                    )
-                )
-                AND inv_no <> 0
-            )
-        THEN
-            PERFORM pg_notify(
-                'alert', '' 
-                || 'plq_lot_no' || ', '
-                || NEW.plq_lot_no::text || ', '
-                || 'INVOICED PRODUCTION' || ', '
                 || sigm_str || ''
             );
         END IF;

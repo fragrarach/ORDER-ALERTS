@@ -107,12 +107,8 @@ def order_new_blanket(ref, cli_name1, user):
         to_list = ['jan.z@quatroair.com']
         cc_list = ['jan.z@quatroair.com']
     else:
-        if user != 'SANJAY':
-            to_list = ['sanjay.m@quatroair.com']
-            cc_list = ['stephanie.l@quatroair.com']
-        else:
-            to_list = ['stephanie.l@quatroair.com']
-            cc_list = ['']
+        to_list = ['sanjay.m@quatroair.com']
+        cc_list = ['']
 
     ord_no = ref
     subject_str = f"New Blanket Order {ord_no}"
@@ -126,12 +122,8 @@ def order_new_release(ref, cli_name1, user):
         to_list = ['jan.z@quatroair.com']
         cc_list = ['jan.z@quatroair.com']
     else:
-        if user != 'SANJAY':
-            to_list = ['sanjay.m@quatroair.com']
-            cc_list = ['stephanie.l@quatroair.com']
-        else:
-            to_list = ['stephanie.l@quatroair.com']
-            cc_list = ['']
+        to_list = ['sanjay.m@quatroair.com']
+        cc_list = ['']
 
     ord_no = ref
     subject_str = f"New Blanket Release {ord_no}"
@@ -258,7 +250,7 @@ def invoice_email_unsent(ref, ord_no):
     return body, to_list, cc_list, subject_str
 
 
-def transaction_invoiced_production(ref, prt_no):
+def invoiced_unrun_production(ord_no):
     if dev_check():
         to_list = ['jan.z@quatroair.com']
         cc_list = ['jan.z@quatroair.com']
@@ -266,11 +258,9 @@ def transaction_invoiced_production(ref, prt_no):
         to_list = ['sanjay.m@quatroair.com']
         cc_list = ['']
 
-    plq_lot_no = ref
-    subject_str = f"SIGM Invoiced Production {prt_no} / {plq_lot_no}"
-    body = f'Our system has detected a production has been run for an invoiced order. \n\n' \
-           f'Produced Part : {prt_no} \n' \
-           f'Planning Lot # : {plq_lot_no} \n\n' \
+    subject_str = f"SIGM Invoiced Production (Order # {ord_no})"
+    body = f'Our system has detected an invoice has been generated ' \
+           f'for an existing production linked to order {ord_no}. \n\n' \
            f'Thank you'
     return body, to_list, cc_list, subject_str
 
@@ -322,7 +312,7 @@ def order_missing_component(ref, cli_name1, missing_components):
         cc_list = ['jan.z@quatroair.com']
     else:
         to_list = ['sales@quatroair.com']
-        cc_list = ['sanjay.m@quatroair.com']
+        cc_list = ['']
 
     ord_no = ref
     subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
@@ -351,7 +341,7 @@ def order_component_multiplier(ref, cli_name1, component_multiplier):
         cc_list = ['jan.z@quatroair.com']
     else:
         to_list = ['sales@quatroair.com']
-        cc_list = ['sanjay.m@quatroair.com']
+        cc_list = ['']
 
     ord_no = ref
     subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"

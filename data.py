@@ -105,8 +105,8 @@ def alert_handler(config, alert, ref, user):
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'INVOICED PRODUCTION':
-        prt_no = statements.planning_lot_prt_no(config, ref)
-        body, to_list, cc_list, subject_str = transaction_invoiced_production(ref, prt_no)
+        ord_no = statements.orl_id_ord_no(config, ref)
+        body, to_list, cc_list, subject_str = invoiced_unrun_production(ord_no)
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'CONVERTED DATE':

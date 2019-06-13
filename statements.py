@@ -10,6 +10,14 @@ def ord_no_cli_id(config, ord_no):
     return cli_id
 
 
+# Pull 'cli_id' record from 'order_header' table based on 'ord_no' record
+def orl_id_ord_no(config, orl_id):
+    sql_exp = f'SELECT ord_no FROM order_line WHERE orl_id = {orl_id}'
+    result_set = sql_query(sql_exp, config.sigm_db_cursor)
+    ord_no = scalar_data(result_set)
+    return ord_no
+
+
 # Pull 'cli_name1' record from 'client' table based on 'cli_id' record
 def cli_id_cli_name1(config, cli_id):
     sql_exp = f'SELECT cli_name1 FROM client WHERE cli_id = {cli_id}'
