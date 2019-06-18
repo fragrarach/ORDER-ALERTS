@@ -285,10 +285,10 @@ ELSIF tg_table_name = 'order_header' THEN
             END IF;
                 
             IF
-                NEW.ord_pmt_term = 4
-                and NEW.ord_status IN ('A', 'B', 'E')
-                and NEW.ord_type = 1
-                and NEW.ord_pkg_cost = 0
+                    NEW.ord_pmt_term = 4
+                    and NEW.ord_status IN ('A', 'B', 'E')
+                    and NEW.ord_type = 1
+                    and NEW.ord_pkg_cost = 0
             THEN
                 PERFORM pg_notify(
                     'alert', '' 

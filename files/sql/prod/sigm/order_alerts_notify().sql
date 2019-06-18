@@ -286,7 +286,7 @@ ELSIF tg_table_name = 'order_header' THEN
                 
             IF
                 NEW.ord_pmt_term = 4
-                and NEW.ord_status IN ('A', 'B', 'E')
+                and NEW.ord_status IN ('A', 'B', 'D', 'E')
                 and NEW.ord_type = 1
                 and NEW.ord_pkg_cost = 0
             THEN
@@ -499,7 +499,7 @@ ELSIF tg_table_name = 'part_transaction' THEN
         IF
             NEW.prt_type = 'A'
             AND NEW.ptn_qty_after < 0
-            AND NEW.pgr_no NOT IN ('002', '226', '230')
+            AND NEW.pgr_no NOT IN ('002', '097', '120', '226', '230')
         THEN
             PERFORM pg_notify(
                 'alert', '' 
