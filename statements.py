@@ -1,4 +1,4 @@
-from quatro import sql_query, scalar_data, tabular_data
+from quatro import sql_query, scalar_data, tabular_data, log
 import data
 
 
@@ -149,8 +149,8 @@ def duplicate_alert_check(config, timestamp, alert, ref_type, ref, user, station
         for cell in row:
             check = cell
             if check == 1:
-                print(f'Error Logged : {log_message}')
+                log(f'Error Logged : {log_message}')
                 log_handler(config, timestamp, alert, ref_type, ref, user, station)
                 data.alert_handler(config, alert, ref, user)
             else:
-                print(f'Duplicate Error : {log_message}')
+                log(f'Duplicate Error : {log_message}')

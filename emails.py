@@ -1,7 +1,7 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from quatro import dev_check
+from quatro import dev_check, log
 
 
 # Email body formatting functions, called by the alert handler based on triggered alert
@@ -432,4 +432,4 @@ def email_handler(body, to_list, cc_list, subject_str):
 
     s.sendmail(from_str, to_list + cc_list + bcc_list, text)
     s.quit()
-    print('Email Sent')
+    log('Email Sent')

@@ -2,6 +2,7 @@ import re
 import datetime
 import statements
 from emails import *
+from quatro import log
 
 
 # Split payload string, store as named variables, send to duplicate alert checker
@@ -141,7 +142,7 @@ def alert_handler(config, alert, ref, user):
             body, to_list, cc_list, subject_str = order_component_multiplier(ref, cli_name1, component_multiplier)
             email_handler(body, to_list, cc_list, subject_str)
         else:
-            print(f'FALSE POSITIVE COMPONENT MULTIPLIER')
+            log(f'FALSE POSITIVE COMPONENT MULTIPLIER')
 
     elif alert == 'UNCHECKED NEED CALCULATION':
         body, to_list, cc_list, subject_str = planning_lot_calculation(ref)

@@ -102,6 +102,7 @@ ELSIF tg_table_name = 'invoicing_line' THEN
                 AND plq_adj_flag = 'f'
             )
             AND NEW.orl_id <> 0
+            AND NEW.inl_ship_qty <> 0
         THEN
             PERFORM pg_notify(
                 'alert', ''
