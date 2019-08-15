@@ -412,6 +412,24 @@ def order_unit_date(ref, cli_name1):
     return body, to_list, cc_list, subject_str
 
 
+def order_duplicate_po(ord_no, cli_name1):
+    if dev_check():
+        to_list = ['jan.z@quatroair.com']
+        cc_list = ['jan.z@quatroair.com']
+    else:
+        to_list = ['sales@quatroair.com']
+        cc_list = ['']
+
+    subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
+    body = f"Our system has detected a duplicate client order number (Order Number {ord_no}) for {cli_name1}. \n\n" \
+           f"This is due to two orders with the same invoice-to client having the same client order number. \n"
+    body += '\n' \
+            'If this was done intentionally, please ignore this message.\n\n' \
+            'Thank you.'
+
+    return body, to_list, cc_list, subject_str
+
+
 # Send formatted email body to defined recipients
 def email_handler(body, to_list, cc_list, subject_str):
     from_str = 'noreply@quatroair.com'

@@ -113,13 +113,13 @@ ELSIF tg_table_name = 'invoicing_line' THEN
             );
         END IF;
     END IF;
-    
+
 ELSIF tg_table_name = 'order_header' THEN
 
     IF tg_op = 'UPDATE' THEN
-    
+
         IF NEW.prj_no IS NULL THEN
-        
+
             IF
                 NEW.ord_status NOT IN ('C', 'F', 'I')
                 AND NEW.ord_type NOT IN (9, 10)
@@ -134,14 +134,14 @@ ELSIF tg_table_name = 'order_header' THEN
                 ) = 1
             THEN
                 PERFORM pg_notify(
-                    'alert', '' 
+                    'alert', ''
                     || 'ord_no' || ', '
                     || NEW.ord_no::text || ', '
                     || 'ZERO QUANTITY' || ', '
                     || sigm_str || ''
                 );
             END IF;
-            
+
             IF
                 NEW.ord_status NOT IN ('C', 'F', 'I')
                 AND NEW.ord_type = 9
@@ -163,23 +163,23 @@ ELSIF tg_table_name = 'order_header' THEN
                 ) = 1
             THEN
                 PERFORM pg_notify(
-                    'alert', '' 
+                    'alert', ''
                     || 'ord_no' || ', '
                     || NEW.ord_no::text || ', '
                     || 'COMPLETED BLANKET' || ', '
                     || sigm_str || ''
                 );
             END IF;
-            
+
             IF
-                NEW.ord_status <> 'E' 
+                NEW.ord_status <> 'E'
                 AND OLD.ord_status <> 'E'
                 AND NEW.ord_type <> 9
                 AND NEW.ord_type <> 10
                 AND (
                     SELECT CASE WHEN EXISTS (
                         SELECT orl_id
-                        FROM order_line 
+                        FROM order_line
                         WHERE ord_no = NEW.ord_no
                         AND orl_quantity <> orl_reserved_qty
                         AND (
@@ -191,27 +191,27 @@ ELSIF tg_table_name = 'order_header' THEN
                 ) = 1
             THEN
                 PERFORM pg_notify(
-                    'alert', '' 
+                    'alert', ''
                     || 'ord_no' || ', '
                     || NEW.ord_no::text || ', '
                     || 'NOT RESERVED' || ', '
                     || sigm_str || ''
                 );
             END IF;
-                
+
             IF
-                OLD.ord_status IN ('A', 'B') 
+                OLD.ord_status IN ('A', 'B')
                 AND NEW.ord_status = 'C'
             THEN
                 PERFORM pg_notify(
-                    'alert', '' 
+                    'alert', ''
                     || 'ord_no' || ', '
                     || NEW.ord_no::text || ', '
                     || 'ORDER CANCELLED' || ', '
                     || sigm_str || ''
                 );
             END IF;
-                
+
             IF
                 (
                     (NEW.ord_status = 'A')
@@ -220,7 +220,7 @@ ELSIF tg_table_name = 'order_header' THEN
                 AND (
                     SELECT CASE WHEN EXISTS (
                         WITH orl_dates AS (
-                            SELECT ord_no, orl_req_dt 
+                            SELECT ord_no, orl_req_dt
                             FROM order_line
                             WHERE orl_req_dt IS NOT NULL
                             AND ord_no IN (
@@ -243,14 +243,14 @@ ELSIF tg_table_name = 'order_header' THEN
                 ) = 1
             THEN
                 PERFORM pg_notify(
-                    'alert', '' 
+                    'alert', ''
                     || 'ord_no' || ', '
                     || NEW.ord_no::text || ', '
                     || 'LINE DATES' || ', '
                     || sigm_str || ''
                 );
             END IF;
-            
+
             IF
                 (
                     SELECT CASE WHEN EXISTS (
@@ -277,14 +277,14 @@ ELSIF tg_table_name = 'order_header' THEN
                 ) = 1
             THEN
                 PERFORM pg_notify(
-                    'alert', '' 
+                    'alert', ''
                     || 'ord_no' || ', '
                     || NEW.ord_no::text || ', '
                     || 'MISSING AE750' || ', '
                     || sigm_str || ''
                 );
             END IF;
-                
+
             IF
                 NEW.ord_pmt_term = 4
                 and NEW.ord_status IN ('A', 'B', 'D', 'E')
@@ -292,14 +292,14 @@ ELSIF tg_table_name = 'order_header' THEN
                 and NEW.ord_pkg_cost = 0
             THEN
                 PERFORM pg_notify(
-                    'alert', '' 
+                    'alert', ''
                     || 'ord_no' || ', '
                     || NEW.ord_no::text || ', '
                     || 'ZERO BANK FEES' || ', '
                     || sigm_str || ''
                 );
             END IF;
-            
+
             IF
                 NEW.ord_status NOT IN ('C', 'F', 'I')
                 AND EXISTS (
@@ -322,7 +322,7 @@ ELSIF tg_table_name = 'order_header' THEN
                 )
             THEN
                 PERFORM pg_notify(
-                    'alert', '' 
+                    'alert', ''
                     || 'ord_no' || ', '
                     || NEW.ord_no::text || ', '
                     || 'EXISTING BLANKET' || ', '
@@ -357,41 +357,59 @@ ELSIF tg_table_name = 'order_header' THEN
                     || sigm_str || ''
                 );
             END IF;
+
+            IF
+                NEW.ord_cli_ord_no <> ''
+                AND NEW.ord_cli_ord_no IN (
+                    SELECT ord_cli_ord_no
+                    FROM order_header oh
+                    WHERE oh.ord_no <> NEW.ord_no
+                    AND oh.inv_cli_id = NEW.inv_cli_id
+                )
+            THEN
+                PERFORM pg_notify(
+                    'alert', ''
+                    || 'ord_no' || ', '
+                    || NEW.ord_no::text || ', '
+                    || 'DUPLICATE PO' || ', '
+                    || sigm_str || ''
+                );
+            END IF;
         END IF;
-        
+
         IF
-            OLD.ord_type <> 9 
+            OLD.ord_type <> 9
             AND NEW.ord_type = 9
         THEN
             PERFORM pg_notify(
-                'alert', '' 
+                'alert', ''
                 || 'ord_no' || ', '
                 || NEW.ord_no::text || ', '
                 || 'NEW BLANKET' || ', '
                 || sigm_str || ''
             );
         END IF;
-            
+
         IF
-            OLD.ord_type <> 10 
+            OLD.ord_type <> 10
             AND NEW.ord_type = 10
         THEN
             PERFORM pg_notify(
-                'alert', '' 
+                'alert', ''
                 || 'ord_no' || ', '
                 || NEW.ord_no::text || ', '
                 || 'NEW RELEASE' || ', '
                 || sigm_str || ''
             );
-        END IF;  
+        END IF;
 
         IF
-            OLD.ord_status IN ('D', 'E') 
-            AND NEW.ord_status IN ('A', 'B') 
+            OLD.ord_status IN ('D', 'E')
+            AND NEW.ord_status IN ('A', 'B')
             AND NEW.ord_date <> NOW()::DATE
         THEN
             PERFORM pg_notify(
-                'alert', '' 
+                'alert', ''
                 || 'ord_no' || ', '
                 || NEW.ord_no::text || ', '
                 || 'CONVERTED DATE' || ', '
@@ -471,20 +489,20 @@ ELSIF tg_table_name = 'order_header' THEN
             );
         END IF;
     END IF;
-    
+
 ELSIF tg_table_name = 'client' THEN
 
     IF tg_op = 'UPDATE' THEN
-    
+
         IF
-            NEW.cli_bo_accptd::text = 'true' 
+            NEW.cli_bo_accptd::text = 'true'
             AND (
-                NEW.cli_creation_dt = current_date 
+                NEW.cli_creation_dt = current_date
                 OR OLD.cli_active <> NEW.cli_active
             )
         THEN
             PERFORM pg_notify(
-                'alert', '' 
+                'alert', ''
                 || 'cli_no' || ', '
                 || NEW.cli_no::text || ', '
                 || 'BO ALLOWED' || ', '
@@ -492,18 +510,18 @@ ELSIF tg_table_name = 'client' THEN
             );
         END IF;
     END IF;
-    
+
 ELSIF tg_table_name = 'part_transaction' THEN
 
     IF tg_op = 'INSERT' THEN
-    
+
         IF
             NEW.prt_type = 'A'
             AND NEW.ptn_qty_after < 0
-            AND NEW.pgr_no NOT IN ('002', '097', '120', '226', '230')
+            AND NEW.pgr_no NOT IN ('002', '004', '085', '097', '100', '120', '226', '230')
         THEN
             PERFORM pg_notify(
-                'alert', '' 
+                'alert', ''
                 || 'ptn_id' || ', '
                 || NEW.ptn_id::text || ', '
                 || 'NEGATIVE QUANTITY' || ', '
@@ -511,11 +529,11 @@ ELSIF tg_table_name = 'part_transaction' THEN
             );
         END IF;
     END IF;
-    
+
 ELSIF tg_table_name = 'planning_lot_detailed' THEN
 
     IF tg_op = 'UPDATE' THEN
-        IF 
+        IF
             NEW.pld_lvl <> 0
             AND NEW.prt_id IN (
                 SELECT prt_master_id
@@ -523,21 +541,25 @@ ELSIF tg_table_name = 'planning_lot_detailed' THEN
             )
             AND NEW.pld_qty_res = 0
             AND (
-                SELECT pqt_real_qty 
-                FROM part_quantity pq 
+                SELECT pqt_real_qty
+                FROM part_quantity pq
                 WHERE pq.prt_id = NEW.prt_id
             ) >= (
                 (
                     SELECT SUM(pld_qty_res)
-                    FROM planning_lot_detailed 
+                    FROM planning_lot_detailed
                     WHERE prt_id = NEW.prt_id
                     AND pld_adj_flag = 'f'
                 ) + NEW.pld_qty_for
             )
-            AND (NEW.pld_adj_flag = 'f' OR OLD.pld_adj_flag = 'f')
+            AND (
+                SELECT plq_adj_flag
+                FROM planning_lot_quantity
+                WHERE NEW.plq_id = plq_id
+            ) = 'f'
         THEN
             PERFORM pg_notify(
-                'alert', '' 
+                'alert', ''
                 || 'plq_lot_no' || ', '
                 || NEW.plq_lot_no::text || ', '
                 || 'UNCHECKED NEED CALCULATION' || ', '
@@ -545,7 +567,7 @@ ELSIF tg_table_name = 'planning_lot_detailed' THEN
             );
         END IF;
     ELSIF tg_op = 'INSERT' THEN
-        IF 
+        IF
             NEW.pld_lvl <> 0
             AND NEW.prt_id IN (
                 SELECT prt_master_id
@@ -553,18 +575,22 @@ ELSIF tg_table_name = 'planning_lot_detailed' THEN
             )
             AND NEW.pld_qty_res = 0
             AND (
-                SELECT pqt_real_qty 
-                FROM part_quantity pq 
+                SELECT pqt_real_qty
+                FROM part_quantity pq
                 WHERE pq.prt_id = NEW.prt_id
             ) >= (
                 (
                     SELECT SUM(pld_qty_res)
-                    FROM planning_lot_detailed 
+                    FROM planning_lot_detailed
                     WHERE prt_id = NEW.prt_id
                     AND pld_adj_flag = 'f'
                 ) + NEW.pld_qty_for
             )
-            AND NEW.pld_adj_flag = 'f'
+            AND (
+                SELECT plq_adj_flag
+                FROM planning_lot_quantity
+                WHERE NEW.plq_id = plq_id
+            ) = 'f'
         THEN
             PERFORM pg_notify(
                 'alert', '' 
