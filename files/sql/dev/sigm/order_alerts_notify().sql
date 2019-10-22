@@ -339,6 +339,7 @@ ELSIF tg_table_name = 'order_header' THEN
                     JOIN part_group pg USING(pgr_id)
                     WHERE oh.ord_no = NEW.ord_no
                     AND ol.orl_req_dt < (oh.ord_date + '14 days'::INTERVAL)::DATE
+                    AND oh.ord_status NOT IN ('C', 'F', 'I')
                     AND pg.pgr_no NOT IN (
                             '002', '003', '004', '005', '006', '007', '008', '009',
                             '010', '011', '012', '013', '014', '015', '016', '017', '018', '019',
@@ -360,6 +361,7 @@ ELSIF tg_table_name = 'order_header' THEN
 
             IF
                 NEW.ord_cli_ord_no <> ''
+                AND NEW.ord_status <> 'C'
                 AND NEW.ord_cli_ord_no IN (
                     SELECT ord_cli_ord_no
                     FROM order_header oh
@@ -488,6 +490,28 @@ ELSIF tg_table_name = 'order_header' THEN
                 || sigm_str || ''
             );
         END IF;
+
+        IF
+            LOWER(NEW.car_name) LIKE '%ups%'
+            AND EXISTS (
+                SELECT prt_no
+                FROM part
+                WHERE prt_usr_flag1 = 't'
+                AND prt_no IN (
+                    SELECT prt_no
+                    FROM order_line
+                    WHERE order_line.ord_no = NEW.ord_no
+                )
+            )
+        THEN
+            PERFORM pg_notify(
+                'alert', ''
+                || 'ord_no' || ', '
+                || NEW.ord_no::text || ', '
+                || 'TRUCK SHIPMENT' || ', '
+                || sigm_str || ''
+            );
+        END IF;
     END IF;
 
 ELSIF tg_table_name = 'client' THEN
@@ -518,7 +542,7 @@ ELSIF tg_table_name = 'part_transaction' THEN
         IF
             NEW.prt_type = 'A'
             AND NEW.ptn_qty_after < 0
-            AND NEW.pgr_no NOT IN ('002', '004', '085', '097', '100', '120', '226', '230')
+            AND NEW.pgr_no NOT IN ('002', '004', '085', '094', '097', '100', '120', '226', '230')
         THEN
             PERFORM pg_notify(
                 'alert', ''

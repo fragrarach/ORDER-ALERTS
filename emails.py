@@ -45,12 +45,8 @@ def order_not_reserved(ref, cli_name1, user):
         to_list = ['jan.z@quatroair.com']
         cc_list = ['jan.z@quatroair.com']
     else:
-        if user != 'SANJAY':
-            to_list = ['sales@quatroair.com']
-            cc_list = ['carmy.m@quatroair.com']
-        else:
-            to_list = ['sanjay.m@quatroair.com']
-            cc_list = ['']
+        to_list = ['sales@quatroair.com']
+        cc_list = ['carmy.m@quatroair.com']
 
     ord_no = ref
     subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
@@ -223,7 +219,7 @@ def order_completed_blanket(ref, cli_name1):
         cc_list = ['jan.z@quatroair.com']
     else:
         to_list = ['sales@quatroair.com']
-        cc_list = ['sanjay.m@quatroair.com']
+        cc_list = ['']
 
     ord_no = ref
     subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
@@ -426,6 +422,40 @@ def order_duplicate_po(ord_no, cli_name1):
     body += '\n' \
             'If this was done intentionally, please ignore this message.\n\n' \
             'Thank you.'
+
+    return body, to_list, cc_list, subject_str
+
+
+def order_missing_tax_id(ord_no, cli_name1):
+    if dev_check():
+        to_list = ['jan.z@quatroair.com']
+        cc_list = ['jan.z@quatroair.com']
+    else:
+        to_list = ['sales@quatroair.com']
+        cc_list = ['']
+
+    subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
+    body = f"Our system has detected a missing tax ID for a US client (Order Number {ord_no}) for {cli_name1}. \n\n" \
+           f"Printing a picking list will be impossible until the tax ID number is entered for the client. \n"
+    body += '\n' \
+            'If this was done intentionally, please ignore this message.\n\n' \
+            'Thank you.'
+
+    return body, to_list, cc_list, subject_str
+
+
+def order_truck_shipment(ord_no, cli_name1):
+    if dev_check():
+        to_list = ['jan.z@quatroair.com']
+        cc_list = ['jan.z@quatroair.com']
+    else:
+        to_list = ['sales@quatroair.com']
+        cc_list = ['']
+
+    subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
+    body = f"Our system has detected an order including (a) 'PALLET ONLY' part(s) with carrier set to UPS. \n"
+    body += f"Orders including such parts can only ship by truck. \n\n"
+    body += f"Thank you."
 
     return body, to_list, cc_list, subject_str
 

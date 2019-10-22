@@ -161,3 +161,17 @@ def alert_handler(config, alert, ref, user):
         cli_name1 = statements.cli_id_cli_name1(config, cli_id)
         body, to_list, cc_list, subject_str = order_duplicate_po(ord_no, cli_name1)
         email_handler(body, to_list, cc_list, subject_str)
+
+    elif alert == 'MISSING TAX ID':
+        ord_no = ref
+        cli_id = statements.ord_no_cli_id(config, ord_no)
+        cli_name1 = statements.cli_id_cli_name1(config, cli_id)
+        body, to_list, cc_list, subject_str = order_missing_tax_id(ord_no, cli_name1)
+        email_handler(body, to_list, cc_list, subject_str)
+
+    elif alert == 'TRUCK SHIPMENT':
+        ord_no = ref
+        cli_id = statements.ord_no_cli_id(config, ord_no)
+        cli_name1 = statements.cli_id_cli_name1(config, cli_id)
+        body, to_list, cc_list, subject_str = order_truck_shipment(ord_no, cli_name1)
+        email_handler(body, to_list, cc_list, subject_str)
