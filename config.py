@@ -11,6 +11,14 @@ class Config:
         self.log_connection = None
         self.log_db_cursor = None
         self.LISTEN_CHANNEL = 'alert'
+        self.user_emails = {
+            'JAN': 'jan.z@quatroair.com',
+            'SANJAY': 'sanjay.m@quatroair.com',
+            'ERICK': 'erick.h@quatroair.com',
+            'MARK': 'mark.s@quatroair.com',
+            'RECEPTION': 'service@aerofil.ca',
+            'STEPHEN': 'stephen.f@quatroair.com'
+        }
 
     def sql_connections(self):
         self.sigm_connection, self.sigm_db_cursor = sigm_connect(self.LISTEN_CHANNEL)

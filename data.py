@@ -145,7 +145,7 @@ def alert_handler(alert, ref, user):
             log(f'FALSE POSITIVE COMPONENT MULTIPLIER')
 
     elif alert == 'UNCHECKED NEED CALCULATION':
-        body, to_list, cc_list, subject_str = planning_lot_calculation(ref)
+        body, to_list, cc_list, subject_str = planning_lot_calculation(ref, user)
         email_handler(body, to_list, cc_list, subject_str)
 
     elif alert == 'UNIT DATES':
@@ -174,4 +174,28 @@ def alert_handler(alert, ref, user):
         cli_id = statements.ord_no_cli_id(ord_no)
         cli_name1 = statements.cli_id_cli_name1(cli_id)
         body, to_list, cc_list, subject_str = order_truck_shipment(ord_no, cli_name1)
+        email_handler(body, to_list, cc_list, subject_str)
+
+    elif alert == 'RECEPTION':
+        pul_id = ref
+        puh_no = statements.pul_id_puh_no(pul_id)
+        puh_reference = statements.puh_no_puh_reference(puh_no)
+        if 'ALERT' in puh_reference:
+            usr_no = statements.puh_no_usr_no(puh_no)
+            sup_name1 = statements.puh_no_sup_name1(puh_no)
+            body, to_list, cc_list, subject_str = purchase_order_reception(usr_no, puh_reference, puh_no, sup_name1)
+            email_handler(body, to_list, cc_list, subject_str)
+
+    elif alert == 'MISSING SUPPLIER':
+        pul_id = ref
+        puh_no = statements.pul_id_puh_no(pul_id)
+        prt_no = statements.pul_id_prt_no(pul_id)
+        if prt_no != 'SPECIAL':
+            body, to_list, cc_list, subject_str = purchase_order_missing_supplier(user, puh_no, prt_no)
+            email_handler(body, to_list, cc_list, subject_str)
+
+    elif alert == 'OVER RECEPTION':
+        pul_id = ref
+        puh_no = statements.pul_id_puh_no(pul_id)
+        body, to_list, cc_list, subject_str = purchase_order_over_reception(user, puh_no)
         email_handler(body, to_list, cc_list, subject_str)

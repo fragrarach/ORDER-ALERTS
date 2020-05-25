@@ -1,7 +1,7 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from quatro import dev_check, log
+from quatro import dev_check, log, configuration as c
 
 
 # Email body formatting functions, called by the alert handler based on triggered alert
@@ -371,12 +371,15 @@ def order_component_multiplier(ref, cli_name1, component_multiplier):
     return body, to_list, cc_list, subject_str
 
 
-def planning_lot_calculation(ref):
+def planning_lot_calculation(ref, user):
     if dev_check():
         to_list = ['jan.z@quatroair.com']
         cc_list = ['jan.z@quatroair.com']
     else:
-        to_list = ['sanjay.m@quatroair.com']
+        if user in c.config.user_emails:
+            to_list = [c.config.user_emails[user]]
+        else:
+            to_list = [c.config.user_emails['SANJAY']]
         cc_list = ['']
 
     plq_lot_no = ref
@@ -455,6 +458,74 @@ def order_truck_shipment(ord_no, cli_name1):
     subject_str = f"SIGM Order {ord_no} / Client {cli_name1} Issue"
     body = f"Our system has detected an order including (a) 'PALLET ONLY' part(s) with carrier set to UPS. \n"
     body += f"Orders including such parts can only ship by truck. \n\n"
+    body += f"Thank you."
+
+    return body, to_list, cc_list, subject_str
+
+
+def purchase_order_reception(usr_no, puh_reference, puh_no, sup_name1):
+    if dev_check():
+        to_list = ['jan.z@quatroair.com']
+        cc_list = ['jan.z@quatroair.com']
+    else:
+        if usr_no == 'SANJAY':
+            to_list = ['sanjay.m@quatroair.com']
+        elif usr_no == 'RECEPTION':
+            to_list = ['service@aerofil.ca']
+        else:
+            to_list = ['mark.s@quatroair.com']
+
+        cc_list = ['']
+        if 'MS' in puh_reference:
+            cc_list.append('mark.s@quatroair.com')
+        if 'SM' in puh_reference:
+            cc_list.append('sanjay.m@quatroair.com')
+        if 'GP' in puh_reference:
+            cc_list.append('greg.p@quatroair.com')
+
+    subject_str = f"SIGM Purchase Order {puh_no} / Supplier {sup_name1} Reception"
+    body = f"Our system has detected a reception made for purchase order {puh_no} ({sup_name1}) \n"
+    body += f"This alert was requested by entering the term 'ALERT' in the reference field. "
+    body += f"The alert is sent to the person who created the PO " \
+            f"and anyone whose initials are in the reference field. \n\n"
+    body += f"Thank you."
+
+    return body, to_list, cc_list, subject_str
+
+
+def purchase_order_missing_supplier(user, puh_no, prt_no):
+    if dev_check():
+        to_list = ['jan.z@quatroair.com']
+        cc_list = ['jan.z@quatroair.com']
+    else:
+        if user in c.config.user_emails:
+            to_list = [c.config.user_emails[user]]
+        else:
+            to_list = ['mark.s@quatroair.com']
+        cc_list = ['']
+
+    subject_str = f"SIGM Purchase Order {puh_no} Issue"
+    body = f"Our system has detected a purchase order for {prt_no} where the supplier is not defined" \
+           f" in the purchasing tab of the parts window. Please add this supplier and pricing in the purchasing tab. \n"
+    body += f"Thank you."
+
+    return body, to_list, cc_list, subject_str
+
+
+def purchase_order_over_reception(user, puh_no):
+    if dev_check():
+        to_list = ['jan.z@quatroair.com']
+        cc_list = ['jan.z@quatroair.com']
+    else:
+        if user in c.config.user_emails:
+            to_list = [c.config.user_emails[user]]
+        else:
+            to_list = ['mark.s@quatroair.com']
+        cc_list = ['']
+
+    subject_str = f"SIGM Purchase Order {puh_no} Issue"
+    body = f"Our system has detected a reception quantity larger than the purchase quantity in purchase " \
+           f"order {puh_no}. Please adjust the purchased quantity to match the reception quantity. \n"
     body += f"Thank you."
 
     return body, to_list, cc_list, subject_str

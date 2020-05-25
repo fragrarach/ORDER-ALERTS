@@ -318,6 +318,7 @@ ELSIF tg_table_name = 'order_header' THEN
                         AND oh_2.ord_type = 9
                         AND oh.cli_id = oh_2.cli_id
                         AND prt_no <> ''
+                        AND oh_2.ord_status NOT IN ('C', 'F', 'I')
                     )
                 )
             THEN
@@ -621,6 +622,80 @@ ELSIF tg_table_name = 'planning_lot_detailed' THEN
                 || 'plq_lot_no' || ', '
                 || NEW.plq_lot_no::text || ', '
                 || 'UNCHECKED NEED CALCULATION' || ', '
+                || sigm_str || ''
+            );
+        END IF;
+    END IF;
+
+ELSIF tg_table_name = 'purchase_order_line' THEN
+
+    IF tg_op = 'UPDATE' THEN
+        IF
+            NEW.pul_rcvd_qty <> OLD.pul_rcvd_qty
+        THEN
+            PERFORM pg_notify(
+                'alert', ''
+                || 'pul_id' || ', '
+                || NEW.pul_id::text || ', '
+                || 'RECEPTION' || ', '
+                || sigm_str || ''
+            );
+        END IF;
+
+        IF
+            NEW.pul_rcvd_qty > NEW.pul_prch_qty
+        THEN
+            PERFORM pg_notify(
+                'alert', ''
+                || 'pul_id' || ', '
+                || NEW.pul_id::text || ', '
+                || 'OVER RECEPTION' || ', '
+                || sigm_str || ''
+            );
+        END IF;
+
+        IF
+            NEW.prt_no <> ''
+            AND (
+                SELECT sup_id
+                FROM purchase_order_header
+                WHERE purchase_order_header.puh_id = NEW.puh_id
+                AND sup_id IN (
+                    SELECT sup_id
+                    FROM part_supplier
+                    WHERE prt_id IN (
+                        SELECT prt_id
+                        FROM part
+                        WHERE prt_no IN (
+                            SELECT prt_no
+                            FROM purchase_order_line
+                            WHERE purchase_order_line.prt_no = NEW.prt_no
+                        )
+                    )
+                )
+            ) IS NULL
+        THEN
+            PERFORM pg_notify(
+                'alert', ''
+                || 'pul_id' || ', '
+                || NEW.pul_id::text || ', '
+                || 'MISSING SUPPLIER' || ', '
+                || sigm_str || ''
+            );
+        END IF;
+    END IF;
+
+ELSIF tg_table_name = 'part_quantity' THEN
+
+    IF tg_op = 'UPDATE' THEN
+        IF
+            NEW.pqt_real_qty <> OLD.pqt_real_qty
+        THEN
+            PERFORM pg_notify(
+                'alert', ''
+                || 'prt_id' || ', '
+                || NEW.prt_id::text || ', '
+                || 'CHANGED PART QUANTITY' || ', '
                 || sigm_str || ''
             );
         END IF;

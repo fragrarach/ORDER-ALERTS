@@ -75,6 +75,49 @@ def order_existing_blankets(ord_no):
     return blankets
 
 
+# Pull 'puh_no' record from 'purchase_order_header' table based on 'pul_id' record
+def pul_id_puh_no(pul_id):
+    sql_exp = f'SELECT puh_no ' \
+              f'FROM purchase_order_line ' \
+              f'JOIN purchase_order_header USING (puh_id) ' \
+              f'WHERE pul_id = {pul_id}'
+    result_set = sql_query(sql_exp, c.config.sigm_db_cursor)
+    puh_no = scalar_data(result_set)
+    return puh_no
+
+
+def pul_id_prt_no(pul_id):
+    sql_exp = f'SELECT prt_no ' \
+              f'FROM purchase_order_line ' \
+              f'WHERE pul_id = {pul_id}'
+    result_set = sql_query(sql_exp, c.config.sigm_db_cursor)
+    prt_no = scalar_data(result_set)
+    return prt_no
+
+
+def puh_no_puh_reference(puh_no):
+    sql_exp = f"SELECT puh_reference " \
+              f"FROM purchase_order_header " \
+              f"WHERE puh_no = {puh_no}"
+    result_set = sql_query(sql_exp, c.config.sigm_db_cursor)
+    puh_reference = scalar_data(result_set)
+    return puh_reference
+
+
+def puh_no_sup_name1(puh_no):
+    sql_exp = f'SELECT sup_name1 FROM purchase_order_header JOIN supplier USING(sup_id) WHERE puh_no = {puh_no}'
+    result_set = sql_query(sql_exp, c.config.sigm_db_cursor)
+    sup_name1 = scalar_data(result_set)
+    return sup_name1
+
+
+def puh_no_usr_no(puh_no):
+    sql_exp = f'SELECT usr_no FROM purchase_order_header WHERE puh_no = {puh_no}'
+    result_set = sql_query(sql_exp, c.config.sigm_db_cursor)
+    usr_no = scalar_data(result_set)
+    return usr_no
+
+
 # Pass 'ord_no' to 'order_component_parents' stored procedure
 # Pass 'ord_no', 'orl_kitmaster_id' to 'order_missing_components' stored procedure
 # Checks if any parts on the order are "parents", check if any of their "children" are missing from the order

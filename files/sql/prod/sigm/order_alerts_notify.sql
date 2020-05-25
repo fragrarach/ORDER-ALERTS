@@ -40,3 +40,9 @@ CREATE TRIGGER order_alerts_notify
   FOR EACH ROW
   EXECUTE PROCEDURE order_alerts_notify();
 
+DROP TRIGGER IF EXISTS order_alerts_notify ON purchase_order_line;
+CREATE TRIGGER order_alerts_notify
+  AFTER UPDATE OR INSERT OR DELETE
+  ON purchase_order_line
+  FOR EACH ROW
+  EXECUTE PROCEDURE order_alerts_notify();
