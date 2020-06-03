@@ -197,5 +197,5 @@ def alert_handler(alert, ref, user):
     elif alert == 'OVER RECEPTION':
         pul_id = ref
         puh_no = statements.pul_id_puh_no(pul_id)
-        body, to_list, cc_list, subject_str = purchase_order_over_reception(user, puh_no)
+        body, to_list, cc_list, subject_str = purchase_order_over_reception(puh_no)
         email_handler(body, to_list, cc_list, subject_str)

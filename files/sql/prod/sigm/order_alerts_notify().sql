@@ -591,6 +591,24 @@ ELSIF tg_table_name = 'planning_lot_detailed' THEN
                 || sigm_str || ''
             );
         END IF;
+
+        IF
+            NEW.pld_lvl = 0
+            AND NOT EXISTS (
+                SELECT prt_id
+                FROM planning_lot_detailed pld_2
+                WHERE NEW.plq_lot_no = pld_2.plq_lot_no
+                AND pld_2.pld_lvl > 0
+            )
+        THEN
+            PERFORM pg_notify(
+                'alert', ''
+                || 'plq_lot_no' || ', '
+                || NEW.plq_lot_no::text || ', '
+                || 'EMPTY BOM PRODUCTION' || ', '
+                || sigm_str || ''
+            );
+        END IF;
     ELSIF tg_op = 'INSERT' THEN
         IF
             NEW.pld_lvl <> 0

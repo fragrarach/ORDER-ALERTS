@@ -512,15 +512,12 @@ def purchase_order_missing_supplier(user, puh_no, prt_no):
     return body, to_list, cc_list, subject_str
 
 
-def purchase_order_over_reception(user, puh_no):
+def purchase_order_over_reception(puh_no):
     if dev_check():
         to_list = ['jan.z@quatroair.com']
         cc_list = ['jan.z@quatroair.com']
     else:
-        if user in c.config.user_emails:
-            to_list = [c.config.user_emails[user]]
-        else:
-            to_list = ['mark.s@quatroair.com']
+        to_list = ['purchasing@quatroair.com']
         cc_list = ['']
 
     subject_str = f"SIGM Purchase Order {puh_no} Issue"
